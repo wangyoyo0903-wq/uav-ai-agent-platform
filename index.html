@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>无人机AI Agent控制平台 | UAV AI Agent Platform</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/animations.css">
+</head>
+<body>
+    <div id="app" class="platform-container">
+        <!-- 顶部导航栏 -->
+        <header class="top-bar">
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 40 40" fill="none">
+                        <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="2"/>
+                        <path d="M20 8 L20 32 M8 20 L32 20" stroke="currentColor" stroke-width="2"/>
+                        <circle cx="20" cy="20" r="6" fill="currentColor"/>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">UAV AI AGENT</span>
+                    <span class="logo-subtitle">无人机智能控制平台</span>
+                </div>
+            </div>
+            <div class="mode-switcher">
+                <button class="mode-btn active" data-mode="demo">
+                    <span class="mode-icon">🎬</span>
+                    <span>演示模式</span>
+                </button>
+                <button class="mode-btn" data-mode="manual">
+                    <span class="mode-icon">⚙️</span>
+                    <span>配置模式</span>
+                </button>
+            </div>
+            <div class="system-status">
+                <div class="status-item">
+                    <span class="status-label">系统状态</span>
+                    <span class="status-value status-online">在线</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">连接无人机</span>
+                    <span class="status-value" id="connected-drones">0/5</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">系统时间</span>
+                    <span class="status-value" id="system-time">--:--:--</span>
+                </div>
+            </div>
+            <div class="top-actions">
+                <button class="btn-icon" id="btn-fullscreen" title="全屏模式">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M8 3H5a2 2 0 00-2 2v3M21 8V5a2 2 0 00-2-2h-3M3 16v3a2 2 0 002 2h3M16 21h3a2 2 0 002-2v-3"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- 主内容区域 -->
+        <main class="main-content">
+            <!-- 左侧面板 -->
+            <aside class="left-panel">
+                <!-- 场景选择面板 (演示模式) -->
+                <section class="panel scene-panel demo-only">
+                    <div class="panel-header">
+                        <h3>🎬 预置场景</h3>
+                    </div>
+                    <div class="panel-content">
+                        <div class="scene-list">
+                            <div class="scene-card active" data-scene="search">
+                                <div class="scene-icon">🔍</div>
+                                <div class="scene-info">
+                                    <span class="scene-name">搜救任务</span>
+                                    <span class="scene-desc">AI自主搜索目标区域</span>
+                                </div>
+                            </div>
+                            <div class="scene-card" data-scene="patrol">
+                                <div class="scene-icon">📡</div>
+                                <div class="scene-info">
+                                    <span class="scene-name">区域巡检</span>
+                                    <span class="scene-desc">智能巡检预设路线</span>
+                                </div>
+                            </div>
+                            <div class="scene-card" data-scene="formation">
+                                <div class="scene-icon">🛸</div>
+                                <div class="scene-info">
+                                    <span class="scene-name">协同编队</span>
+                                    <span class="scene-desc">多机协同执行任务</span>
+                                </div>
+                            </div>
+                            <div class="scene-card" data-scene="emergency">
+                                <div class="scene-icon">🚨</div>
+                                <div class="scene-info">
+                                    <span class="scene-name">应急处理</span>
+                                    <span class="scene-desc">突发情况快速响应</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn-start-demo" id="btn-start-demo">
+                            <span class="btn-icon-left">🚀</span>
+                            <span>开始演示</span>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- 无人机管理面板 -->
+                <section class="panel drone-manager-panel">
+                    <div class="panel-header">
+                        <h3>无人机管理</h3>
+                        <div class="panel-actions manual-only">
+                            <button class="btn-small" id="btn-add-drone">+ 添加</button>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <div class="drone-list" id="drone-list">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 任务规划面板 (配置模式) -->
+                <section class="panel mission-panel manual-only">
+                    <div class="panel-header">
+                        <h3>任务规划</h3>
+                    </div>
+                    <div class="panel-content">
+                        <div class="mission-controls">
+                            <div class="control-group">
+                                <label>任务名称</label>
+                                <input type="text" id="mission-name" placeholder="输入任务名称">
+                            </div>
+                            <div class="control-group">
+                                <label>飞行高度 (m)</label>
+                                <input type="number" id="flight-altitude" value="100" min="10" max="500">
+                            </div>
+                            <div class="control-group">
+                                <label>飞行速度 (m/s)</label>
+                                <input type="range" id="flight-speed" min="1" max="30" value="10">
+                                <span class="range-value" id="speed-value">10 m/s</span>
+                            </div>
+                        </div>
+                        <div class="waypoint-list" id="waypoint-list">
+                            <div class="waypoint-empty">点击地图添加航点</div>
+                        </div>
+                        <div class="mission-actions">
+                            <button class="btn-primary" id="btn-start-mission">开始任务</button>
+                            <button class="btn-secondary" id="btn-clear-mission">清除航点</button>
+                        </div>
+                    </div>
+                </section>
+            </aside>
+
+            <!-- 中央主视图 -->
+            <div class="center-view">
+                <!-- 视图切换标签 -->
+                <div class="view-tabs">
+                    <button class="tab-btn active" data-view="map">地图视图</button>
+                    <button class="tab-btn" data-view="video">视频流</button>
+                    <button class="tab-btn" data-view="split">分屏模式</button>
+                </div>
+
+                <!-- 地图视图 -->
+                <div class="view-container map-view active" id="map-view">
+                    <canvas id="map-canvas"></canvas>
+                    <div class="map-overlay">
+                        <div class="map-controls">
+                            <button class="map-btn" id="btn-zoom-in" title="放大">+</button>
+                            <button class="map-btn" id="btn-zoom-out" title="缩小">-</button>
+                            <button class="map-btn" id="btn-center" title="居中">⊙</button>
+                        </div>
+                        <div class="map-legend">
+                            <div class="legend-item"><span class="legend-color drone-active"></span> 活动中</div>
+                            <div class="legend-item"><span class="legend-color drone-idle"></span> 待命</div>
+                            <div class="legend-item"><span class="legend-color waypoint"></span> 航点</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 视频流视图 -->
+                <div class="view-container video-view" id="video-view">
+                    <div class="video-container" id="video-container">
+                        <canvas id="video-canvas"></canvas>
+                        <div class="video-hud">
+                            <div class="hud-top">
+                                <span class="hud-item">ALT: <span id="hud-alt">--</span>m</span>
+                                <span class="hud-item">SPD: <span id="hud-spd">--</span>m/s</span>
+                                <span class="hud-item">HDG: <span id="hud-hdg">--</span>°</span>
+                            </div>
+                            <div class="hud-center">
+                                <div class="crosshair">+</div>
+                            </div>
+                            <div class="hud-bottom">
+                                <span class="hud-item" id="hud-drone-id">UAV-01</span>
+                                <span class="hud-item">BAT: <span id="hud-bat">--</span>%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 分屏模式 -->
+                <div class="view-container split-view" id="split-view">
+                    <div class="split-left">
+                        <canvas id="split-map-canvas"></canvas>
+                    </div>
+                    <div class="split-right">
+                        <canvas id="split-video-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧面板 -->
+            <aside class="right-panel">
+                <!-- AI Agent编辑器 -->
+                <section class="panel ai-editor-panel">
+                    <div class="panel-header">
+                        <h3>🤖 AI Agent 编辑器</h3>
+                    </div>
+                    <div class="panel-content">
+                        <div class="ai-editor-section">
+                            <h4>决策风格</h4>
+                            <div class="style-options">
+                                <label class="style-option">
+                                    <input type="radio" name="decision-style" value="conservative" checked>
+                                    <span class="style-label">
+                                        <span class="style-name">🛡️ 保守</span>
+                                        <span class="style-desc">优先安全，避免风险</span>
+                                    </span>
+                                </label>
+                                <label class="style-option">
+                                    <input type="radio" name="decision-style" value="balanced">
+                                    <span class="style-label">
+                                        <span class="style-name">⚖️ 平衡</span>
+                                        <span class="style-desc">安全与效率兼顾</span>
+                                    </span>
+                                </label>
+                                <label class="style-option">
+                                    <input type="radio" name="decision-style" value="aggressive">
+                                    <span class="style-label">
+                                        <span class="style-name">🚀 激进</span>
+                                        <span class="style-desc">优先效率，快速响应</span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="ai-editor-section">
+                            <h4>风险阈值</h4>
+                            <div class="threshold-control">
+                                <input type="range" id="risk-threshold" min="0" max="100" value="70">
+                                <div class="threshold-labels">
+                                    <span>低</span>
+                                    <span id="threshold-value">70%</span>
+                                    <span>高</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ai-editor-section">
+                            <h4>任务优先级</h4>
+                            <div class="priority-options">
+                                <label class="priority-option">
+                                    <input type="radio" name="priority" value="safety" checked>
+                                    <span>🛡️ 安全优先</span>
+                                </label>
+                                <label class="priority-option">
+                                    <input type="radio" name="priority" value="efficiency">
+                                    <span>⚡ 效率优先</span>
+                                </label>
+                                <label class="priority-option">
+                                    <input type="radio" name="priority" value="cost">
+                                    <span>💰 成本优先</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="ai-editor-section">
+                            <h4>能力开关</h4>
+                            <div class="capability-toggles">
+                                <label class="toggle-option">
+                                    <span>自动返航</span>
+                                    <input type="checkbox" id="cap-auto-rth" checked>
+                                    <span class="toggle-switch"></span>
+                                </label>
+                                <label class="toggle-option">
+                                    <span>自动避障</span>
+                                    <input type="checkbox" id="cap-auto-avoid" checked>
+                                    <span class="toggle-switch"></span>
+                                </label>
+                                <label class="toggle-option">
+                                    <span>自动协同</span>
+                                    <input type="checkbox" id="cap-auto-coord" checked>
+                                    <span class="toggle-switch"></span>
+                                </label>
+                                <label class="toggle-option">
+                                    <span>智能调度</span>
+                                    <input type="checkbox" id="cap-smart-schedule" checked>
+                                    <span class="toggle-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- AI思考过程 -->
+                <section class="panel ai-thinking-panel">
+                    <div class="panel-header">
+                        <h3>AI 思考过程</h3>
+                        <div class="panel-actions">
+                            <div class="view-toggle">
+                                <button class="toggle-btn active" data-mode="stream">流式</button>
+                                <button class="toggle-btn" data-mode="card">卡片</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <div class="ai-status-mini">
+                            <div class="ai-indicator-mini">
+                                <span class="ai-dot"></span>
+                                <span>AI Agent 运行中</span>
+                            </div>
+                            <div class="ai-confidence-mini">
+                                <span>置信度</span>
+                                <span id="confidence-value-mini">85%</span>
+                            </div>
+                        </div>
+                        <div class="ai-thinking" id="ai-thinking">
+                            <div class="thinking-stream" id="thinking-stream"></div>
+                            <div class="thinking-cards" id="thinking-cards" style="display: none;"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 传感器数据面板 -->
+                <section class="panel sensor-panel manual-only">
+                    <div class="panel-header">
+                        <h3>传感器数据</h3>
+                    </div>
+                    <div class="panel-content">
+                        <div class="sensor-grid">
+                            <div class="sensor-section">
+                                <h4>飞行数据</h4>
+                                <div class="sensor-items">
+                                    <div class="sensor-item">
+                                        <span class="sensor-label">高度</span>
+                                        <span class="sensor-value" id="sensor-altitude">-- m</span>
+                                    </div>
+                                    <div class="sensor-item">
+                                        <span class="sensor-label">速度</span>
+                                        <span class="sensor-value" id="sensor-speed">-- m/s</span>
+                                    </div>
+                                    <div class="sensor-item">
+                                        <span class="sensor-label">航向</span>
+                                        <span class="sensor-value" id="sensor-heading">-- °</span>
+                                    </div>
+                                    <div class="sensor-item">
+                                        <span class="sensor-label">电量</span>
+                                        <span class="sensor-value" id="sensor-battery">-- %</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </aside>
+        </main>
+
+        <!-- 底部控制栏 -->
+        <footer class="bottom-bar">
+            <div class="quick-controls manual-only">
+                <button class="control-btn" id="btn-takeoff" title="起飞">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 19V5M5 12l7-7 7 7"/>
+                    </svg>
+                    <span>起飞</span>
+                </button>
+                <button class="control-btn" id="btn-land" title="降落">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14M5 12l7 7 7-7"/>
+                    </svg>
+                    <span>降落</span>
+                </button>
+                <button class="control-btn" id="btn-hover" title="悬停">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
+                    </svg>
+                    <span>悬停</span>
+                </button>
+                <button class="control-btn" id="btn-rth" title="返航">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12a9 9 0 1018 0 9 9 0 00-18 0"/>
+                        <path d="M12 8l4 4-4 4M8 12h8"/>
+                    </svg>
+                    <span>返航</span>
+                </button>
+            </div>
+            <div class="alert-zone" id="alert-zone"></div>
+        </footer>
+    </div>
+
+    <!-- JavaScript模块 -->
+    <script src="js/utils/constants.js"></script>
+    <script src="js/utils/helpers.js"></script>
+    <script src="js/core/state-manager.js"></script>
+    <script src="js/core/physics-engine.js"></script>
+    <script src="js/core/drone-simulator.js"></script>
+    <script src="js/modules/drone-manager.js"></script>
+    <script src="js/modules/map-renderer.js"></script>
+    <script src="js/modules/ai-agent.js"></script>
+    <script src="js/modules/sensor-system.js"></script>
+    <script src="js/modules/mission-planner.js"></script>
+    <script src="js/ui/components.js"></script>
+    <script src="js/ui/ui-controller.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
